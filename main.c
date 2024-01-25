@@ -34,10 +34,10 @@ state_t FSM[13] ={
     {0x09, 0x1, 0, {allStopS, goW, goS, goW, walk, walk, walk, walk}},
     {0x09, 0x2, 10, {white, white, white, white, walk, white, white, white}},
 		{0x09, 0x2, 1, {redOn1, redOn1, redOn1, redOn1, redOn1, redOn1, redOn1, redOn1}},
-    {0x09, 0x1, 1, {redOff1, redOff1,redOff1,redOff1,redOff1,redOff1,redOff1,redOff1}},
-    {0x09, 0x0, 1, {redOn2, redOn2, redOn2,redOn2,redOn2,redOn2,redOn2,redOn2}},
-    {0x09, 0x1, 1, {redOff2, redOff2,redOff2,redOff2,redOff2,redOff2,redOff2,redOff2}},
-    {0x09, 0x0, 1, {allStopWalk,allStopWalk,allStopWalk,allStopWalk,allStopWalk,
+    {0x09, 0x1, 2, {redOff1, redOff1,redOff1,redOff1,redOff1,redOff1,redOff1,redOff1}},
+    {0x09, 0x0, 3, {redOn2, redOn2, redOn2,redOn2,redOn2,redOn2,redOn2,redOn2}},
+    {0x09, 0x1, 4, {redOff2, redOff2,redOff2,redOff2,redOff2,redOff2,redOff2,redOff2}},
+    {0x09, 0x0, 5, {allStopWalk,allStopWalk,allStopWalk,allStopWalk,allStopWalk,
     allStopWalk,allStopWalk,allStopWalk}},
     {0x09, 0x1, 0, {allStopWalk, goW, goS, goW, walk, goW, goS, goW}},
     {0x21, 0x1, 10, {waitW, goW, waitW,waitW,waitW,waitW,waitW,waitW,}},
@@ -49,12 +49,12 @@ void delay1s(uint32_t time){
 	char c[5];
 	if(time==0){
 		count=0;
-		sprintf(c,"%d",count);
+		sprintf(c,"%02d",count);
 		lcd_printf(c);
 	}
 	else{
 		while(count < time){
-	        sprintf(c, "%d", count + 1);
+	        sprintf(c, "%02d", count + 1);
 	        lcd_printf(c);
 			SysTick_Wait100us(10000); ;
 	        count++; 
@@ -131,17 +131,27 @@ int main(){
         GPIOB->ODR = (GPIOB->ODR & (~0x3F00)) | (FSM[CS].PortBH_Val << 8); // Output South/West led (B8 - B13)
         
         //2) Wait
-        delay1s(FSM[CS].Wait);
-		if(CS==goS||CS==goW||CS==walk){
-			while(FSM[CS].Next[input]==goS||FSM[CS].Next[input]==goW||FSM[CS].Next[input]==walk){
-				char c[5];
-				sprintf(c, "%d", count + 1);
-				lcd_printf(c);
-				SysTick_Wait100us(10000);  
-				count++;
+        if (CS == white || CS == redOn1 || CS == redOn2 || CS == redOff1 || CS == redOff2){
+        	char c[5];
+			sprintf(c, "%02d", FSM[CS].Wait);
+			lcd_printf(c);
+			SysTick_Wait100us(10000);
+			 
+        }
+        else{
+        	delay1s(FSM[CS].Wait);
+			if(CS==goS||CS==goW||CS==walk){
+				while(FSM[CS].Next[input]==goS||FSM[CS].Next[input]==goW||FSM[CS].Next[input]==walk){
+					char c[5];
+					sprintf(c, "%02d", count + 1);
+					lcd_printf(c);
+					SysTick_Wait100us(10000);  
+					count++;
+				}
 			}
-		}
-		count = 0;
+			count = 0;
+        }
+		
         
         //3) Next state
         CS = FSM[CS].Next[input];
